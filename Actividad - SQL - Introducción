@@ -1,76 +1,139 @@
+-- Parte A — Crear base de datos y tablas (DDL)
 CREATE DATABASE renta_autos;
 SHOW DATABASES;
-USE renta_autos;CREATE TABLE Cliente (
+USE renta_autos;
+
+CREATE TABLE Cliente (
   id_cliente INT PRIMARY KEY AUTO_INCREMENT,
   ine VARCHAR(18) NOT NULL UNIQUE,
   nombre VARCHAR(60) NOT NULL,
   telefono VARCHAR(15) NOT NULL,
   direccion VARCHAR(80) NOT NULL
-);CREATE TABLE Auto (
+);
+
+CREATE TABLE Auto (
   id_auto INT PRIMARY KEY AUTO_INCREMENT,
   placas VARCHAR(10) NOT NULL UNIQUE,
   marca VARCHAR(30) NOT NULL,
   modelo VARCHAR(30) NOT NULL,
   anio SMALLINT UNSIGNED NOT NULL,
   color VARCHAR(20) NOT NULL
-);CREATE TABLE Reserva (
+);
+
+CREATE TABLE Reserva (
   id_reserva INT PRIMARY KEY AUTO_INCREMENT,
   id_cliente INT NOT NULL,
   FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE NOT NULL,
   estatus VARCHAR(10) NOT NULL DEFAULT 'ACTIVA'
-);CREATE TABLE ReservaAuto (
+);
+
+CREATE TABLE ReservaAuto (
   id_reserva INT NOT NULL,
   id_auto INT NOT NULL,
   FOREIGN KEY (id_reserva) REFERENCES Reserva(id_reserva),
   FOREIGN KEY (id_auto) REFERENCES Auto(id_auto),
   precio_dia DECIMAL(8,2) UNSIGNED NOT NULL,
   PRIMARY KEY (id_reserva, id_auto)
-);SHOW TABLES;
+);
+
+SHOW TABLES;
 DESCRIBE Cliente;
 DESCRIBE Auto;
 DESCRIBE Reserva;
-DESCRIBE ReservaAuto;INSERT INTO Cliente (ine, nombre, telefono, direccion) VALUES
+DESCRIBE ReservaAuto;
+
+-- Parte B — Insertar datos (DML)
+INSERT INTO Cliente (ine, nombre, telefono, direccion) VALUES
   ('INE1111111111111111', 'Ana López', '2221111111', 'Cholula'),
   ('INE2222222222222222', 'Bruno Reyes', '2222222222', 'Puebla'),
-  ('INE3333333333333333', 'Carla Méndez', '2223333333', 'Atlixco');INSERT INTO Auto (placas, marca, modelo, anio, color) VALUES
+  ('INE3333333333333333', 'Carla Méndez', '2223333333', 'Atlixco');
+
+INSERT INTO Auto (placas, marca, modelo, anio, color) VALUES
   ('TLX-1010', 'Nissan', 'Versa', 2022, 'Gris'),
   ('TLX-2020', 'Toyota', 'Corolla', 2021, 'Blanco'),
   ('TLX-3030', 'VW', 'Jetta', 2020, 'Rojo'),
-  ('TLX-4040', 'Mazda', '2', 2023, 'Azul');INSERT INTO Reserva (id_cliente, fecha_inicio, fecha_fin, estatus) VALUES
+  ('TLX-4040', 'Mazda', '2', 2023, 'Azul');
+
+INSERT INTO Reserva (id_cliente, fecha_inicio, fecha_fin, estatus) VALUES
   (1, '2026-03-10', '2026-03-12', 'ACTIVA'),
   (2, '2026-03-11', '2026-03-11', 'CERRADA'),
-  (1, '2026-03-20', '2026-03-22', 'ACTIVA');INSERT INTO ReservaAuto (id_reserva, id_auto, precio_dia) VALUES
+  (1, '2026-03-20', '2026-03-22', 'ACTIVA');
+
+INSERT INTO ReservaAuto (id_reserva, id_auto, precio_dia) VALUES
   (1, 1, 650.00),
   (1, 3, 800.00),
   (2, 2, 750.00),
-  (3, 4, 700.00);SELECT * FROM Cliente;
+  (3, 4, 700.00);
+
+SELECT * FROM Cliente;
 SELECT * FROM Auto;
 SELECT * FROM Reserva;
-SELECT * FROM ReservaAuto;SELECT * FROM Cliente ORDER BY nombre ASC;SELECT 
+SELECT * FROM ReservaAuto;
+
+-- Parte C — Consultas (DQL)
+-- Q1. Lista todos los clientes ordenados por nombre (ascendente).
+-- Resultado esperado: 3 filas ordenadas por nombre
+
+SELECT * FROM Cliente ORDER BY nombre ASC;
+
+-- Q2. Muestra cada reserva con: id_reserva, nombre del cliente, fecha_inicio, fecha_fin, estatus.
+-- Resultado esperado: 3 filas con los datos solicitados
+
+SELECT 
   r.id_reserva,
   c.nombre,
   r.fecha_inicio,
   r.fecha_fin,
   r.estatus
 FROM Reserva r
-JOIN Cliente c ON r.id_cliente = c.id_cliente;SELECT 
+JOIN Cliente c ON r.id_cliente = c.id_cliente;
+
+-- Q3. Muestra por reserva: id_reserva, cuántos autos tiene (conteo).
+-- Resultado esperado: 3 filas con el id_reserva y el conteo de autos
+
+SELECT 
   r.id_reserva,
   COUNT(ra.id_auto) AS num_autos
 FROM Reserva r
 LEFT JOIN ReservaAuto ra ON r.id_reserva = ra.id_reserva
-GROUP BY r.id_reserva;SELECT
+GROUP BY r.id_reserva;
+
+-- Q4. Muestra el costo total por reserva, considerando días * (suma de precios por día).
+-- Resultado esperado: 3 filas con el id_reserva y el costo total
+
+SELECT
   r.id_reserva,
   SUM(ra.precio_dia * (DATEDIFF(r.fecha_fin, r.fecha_inicio) + 1)) AS costo_total
 FROM Reserva r
 JOIN ReservaAuto ra ON r.id_reserva = ra.id_reserva
-GROUP BY r.id_reserva;SELECT * FROM Reserva WHERE estatus = 'ACTIVA';UPDATE Auto SET color = 'Negro' WHERE placas = 'TLX-3030';
-SELECT * FROM Auto WHERE placas = 'TLX-3030';DELETE FROM ReservaAuto WHERE id_auto = (SELECT id_auto FROM Auto WHERE placas = 'TLX-1010');
-DELETE FROM Auto WHERE placas = 'TLX-1010';START TRANSACTION;
+GROUP BY r.id_reserva;
+
+-- Q5. Muestra las reservas ACTIVAS solamente.
+-- Resultado esperado: 2 filas con reservas activas
+
+SELECT * FROM Reserva WHERE estatus = 'ACTIVA';
+
+-- Parte D — Cambios y transacciones (DML + TCL)
+-- UPDATE
+UPDATE Auto SET color = 'Negro' WHERE placas = 'TLX-3030';
+SELECT * FROM Auto WHERE placas = 'TLX-3030';
+
+-- DELETE
+-- Intento de borrar auto con reserva
+DELETE FROM Auto WHERE placas = 'TLX-1010'; -- Falla por FK
+-- Borra primero la reserva y luego el auto
+DELETE FROM ReservaAuto WHERE id_auto = (SELECT id_auto FROM Auto WHERE placas = 'TLX-1010');
+DELETE FROM Auto WHERE placas = 'TLX-1010';
+
+-- Transacciones
+START TRANSACTION;
 INSERT INTO Reserva (id_cliente, fecha_inicio, fecha_fin) VALUES (3, '2026-04-01', '2026-04-03');
 ROLLBACK;
-SELECT * FROM Reserva WHERE id_cliente = 3;START TRANSACTION;
+SELECT * FROM Reserva WHERE id_cliente = 3; -- No se guarda
+
+START TRANSACTION;
 INSERT INTO Reserva (id_cliente, fecha_inicio, fecha_fin) VALUES (3, '2026-04-01', '2026-04-03');
 COMMIT;
-SELECT * FROM Reserva WHERE id_cliente = 3;
+SELECT * FROM Reserva WHERE id_cliente = 3; -- Se guarda
