@@ -3,6 +3,11 @@ PRAGMA foreign_keys = ON;
 
 -- Parte A — Crear tablas (DDL)
 
+DROP TABLE IF EXISTS ReservaAuto;
+DROP TABLE IF EXISTS Reserva;
+DROP TABLE IF EXISTS Auto;
+DROP TABLE IF EXISTS Cliente;
+
 CREATE TABLE Cliente (
   id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
   ine TEXT NOT NULL UNIQUE,
@@ -69,10 +74,8 @@ SELECT * FROM ReservaAuto;
 
 -- Parte C — Consultas (DQL)
 
--- Q1
 SELECT * FROM Cliente ORDER BY nombre ASC;
 
--- Q2
 SELECT 
   r.id_reserva,
   c.nombre,
@@ -82,7 +85,6 @@ SELECT
 FROM Reserva r
 JOIN Cliente c ON r.id_cliente = c.id_cliente;
 
--- Q3
 SELECT 
   r.id_reserva,
   COUNT(ra.id_auto) AS num_autos
@@ -90,7 +92,6 @@ FROM Reserva r
 LEFT JOIN ReservaAuto ra ON r.id_reserva = ra.id_reserva
 GROUP BY r.id_reserva;
 
--- Q4 
 SELECT
   r.id_reserva,
   SUM(ra.precio_dia * (julianday(r.fecha_fin) - julianday(r.fecha_inicio) + 1)) AS costo_total
@@ -98,33 +99,25 @@ FROM Reserva r
 JOIN ReservaAuto ra ON r.id_reserva = ra.id_reserva
 GROUP BY r.id_reserva;
 
--- Q5
 SELECT * FROM Reserva WHERE estatus = 'ACTIVA';
 
 -- Parte D — Cambios y transacciones
 
--- UPDATE
 UPDATE Auto SET color = 'Negro' WHERE placas = 'TLX-3030';
 SELECT * FROM Auto WHERE placas = 'TLX-3030';
 
--- DELETE (correcto con FK)
 DELETE FROM ReservaAuto 
 WHERE id_auto = (SELECT id_auto FROM Auto WHERE placas = 'TLX-1010');
 
 DELETE FROM Auto WHERE placas = 'TLX-1010';
 
--- Transacciones
-
-BEGIN TRANSACTION;
 INSERT INTO Reserva (id_cliente, fecha_inicio, fecha_fin) 
 VALUES (3, '2026-04-01', '2026-04-03');
 ROLLBACK;
 
 SELECT * FROM Reserva WHERE id_cliente = 3;
 
-BEGIN TRANSACTION;
 INSERT INTO Reserva (id_cliente, fecha_inicio, fecha_fin) 
 VALUES (3, '2026-04-01', '2026-04-03');
-COMMIT;
 
 SELECT * FROM Reserva WHERE id_cliente = 3;
