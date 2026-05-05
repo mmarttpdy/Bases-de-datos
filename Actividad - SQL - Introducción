@@ -121,10 +121,9 @@ UPDATE Auto SET color = 'Negro' WHERE placas = 'TLX-3030';
 SELECT * FROM Auto WHERE placas = 'TLX-3030';
 
 -- DELETE
--- Intento de borrar auto con reserva
-DELETE FROM Auto WHERE placas = 'TLX-1010'; -- Falla por FK
--- Borra primero la reserva y luego el auto
-DELETE FROM ReservaAuto WHERE id_auto = (SELECT id_auto FROM Auto WHERE placas = 'TLX-1010');
+DELETE FROM ReservaAuto 
+WHERE id_auto = (SELECT id_auto FROM Auto WHERE placas = 'TLX-1010');
+
 DELETE FROM Auto WHERE placas = 'TLX-1010';
 
 -- Transacciones
